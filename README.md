@@ -16,22 +16,6 @@
 - README 增加英文版本，并补充上游仓库与 MIT License 归属。
 - 版本号 1.4.0 / versionCode 6。
 
-## v1.2.0 更新
-
-- 加入**从最近任务列表隐藏**：`MainActivity` 设置 `android:excludeFromRecents="true"`，按 Home 后不会出现在最近任务里；回应用请点通知或桌面图标。
-- 按 `config_client.py` 补齐手机端常用项：
-  - `language`：自动 / 中文 / 英文 / 日文选择。
-  - `threshold`：可调“最短录音”时长，短于该时长按误触取消。
-  - `trash_punc`：可选的末尾标点清理（`，。,.`）。
-  - `save_audio` / `audio_name_len`：可选保存 16 kHz 单声道 WAV，文件名取识别结果前 20 字。
-- 新增“3 · 识别与输出”设置卡片。
-
-## v1.1.0 更新
-
-- 悬浮按钮的**宽度、高度可独立调整**，并按“输入法 + 横竖屏”分别保存校准配置，不再用一个固定比例适配所有键盘。
-- 强化上屏链路：搜索所有应用窗口的焦点节点/可编辑父节点/可编辑候选，过滤掉输入法自己的窗口，优先 `ACTION_SET_TEXT`，失败再 `ACTION_PASTE`。
-- 新增**客户端热词**：热词会作为 `context` 发给服务端，同时支持 `错词=>正确词` 本地替换和 `re:` 正则替换。
-
 ## 功能
 
 - 手动填写 CapsWriter-Offline 服务端地址，支持 `IP`、`IP:端口`、`ws://`、`wss://`，默认端口 `6016`（旧版服务端用 `6006`）。
@@ -60,9 +44,6 @@
 ```text
 CapsWriter-Offline-Android-v1.4.0-debug.apk
 ```
-
-它是用 Android 调试证书签名的，适合自己侧载使用；要上架或长期分发，请用自己的 release keystore 重新签名。
-
 ## 构建
 
 ```bash
@@ -194,32 +175,6 @@ trash_punc_thresh = 8
 
 无障碍 API 的能力边界就在这里：Flutter/WebView/远程桌面等如果完全不向无障碍树暴露可写输入节点，不成为当前输入法、不使用 root/Shizuku 就无法直接注入文字，只能走剪贴板。
 
-## 与 config_client.py 对照
-
-对照的是本机 `D:\CapsWriter-Offline\config_client.py`（版本 2.6）。
-
-| config_client.py | 手机端状态 |
-| --- | --- |
-| `addr` / `port` | ✅ 合并为手动服务器地址，支持默认 `6016` |
-| `shortcuts` / `hold_mode` | ✅ 悬浮窗“按住说话 / 点击开关”，快捷键改为屏幕触摸 |
-| `threshold` | ✅ “最短录音”滑块，默认 0.30 秒 |
-| `paste` / `restore_clip` | ✅ 优先 `ACTION_SET_TEXT`，失败粘贴；粘贴后恢复剪贴板 |
-| `paste_apps` | ➖ 未强制按 App 粘贴；手机统一先 `ACTION_SET_TEXT`，失败才 `ACTION_PASTE`，避免 QQ 等可直接写入的 App 被强制走剪贴板 |
-| `enter_apps` | ❌ 未实现“输出后自动回车”，需要针对具体 App 做风险控制 |
-| `save_audio` / `audio_name_len` | ✅ 可选 WAV，保存到 `Music/CapsWriter`，文件名取结果前 20 字 |
-| `context` | ✅ 客户端热词作为 `context` 发送 |
-| `language` | ✅ 自动/中文/英文/日文 |
-| `trash_punc` / `trash_punc_thresh` | ✅ 可选去掉末尾 `，。,.`；阈值按语义单位可调（0–50），微信强制去掉 |
-| `trash_punc_apps` | ⚠️ 目前内置微信强制去标点，未做任意 App 名单 |
-| `traditional_convert` | ❌ 未内置简繁转换表 |
-| `hot` / `hot_thresh` / `hot_similar` / `hot_rule` | ⚠️ 已有 `词`、`错词=>正确词`、`re:` 正则；未实现桌面端的音素模糊 RAG |
-| `llm_enabled` / `llm_stop_key` | ❌ 手机端未接入桌面 LLM 角色系统 |
-| `enable_tray` | ✅ 用常驻通知替代托盘 |
-| `log_level` | ⚠️ 有内存诊断日志，未做等级配置 |
-| `mic_seg_duration` / `mic_seg_overlap` | ✅ 固定 60/4，与服务端默认一致；暂未在 UI 暴露 |
-| `file_seg_*` / `file_save_*` | ❌ 未做音频文件转录 |
-| `udp_broadcast` / `udp_control` | ❌ 未做 UDP 输出/远程控制 |
-
 手机端额外补了桌面没有的：按输入法+横竖屏保存悬浮位置/大小、通知栏、电池优化引导、最近任务隐藏。
 
 > 手机端默认关闭 `save_audio`，避免无意保存隐私音频；需要时在“识别与输出”卡片打开。桌面版默认开启，这一点是有意不同。
@@ -301,12 +256,6 @@ app/src/main/java/com/capswriter/offline/
 音频只发送到你自己填写的 CapsWriter-Offline 服务端，不经过任何第三方服务器。App 不保存录音文件，日志只记录连接状态和识别文字长度，不记录音频内容。识别文本会显示在 App 的“最近识别”和剪贴板兜底中，请自行注意隐私。
 
 ## 验证情况
-
-- `testDebugUnitTest`：22 个测试全部通过（7 个地址解析 + 6 个热词解析/替换 + 9 个末尾标点/阈值测试）。
-- `assembleDebug`：构建成功，versionName 1.4.0 / versionCode 6。
-- `lintDebug`：无 Error，仅有依赖版本、内部资源等 warning。
-- APK 通过 `apksigner verify`，使用 v2 签名。
-- 当前环境没有连接 Android 真机/模拟器，因此悬浮层级、输入法检测、WAV 保存和具体机型兼容性仍需在手机上实测。首次使用建议先在本页“试一下”输入框里验证。
 
 ---
 
