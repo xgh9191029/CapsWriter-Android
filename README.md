@@ -2,7 +2,7 @@
 
 [中文](#capswriter-安卓离线语音输入) · [English](#english)
 <div align="center">
-  <img src=".\images\images-removebg-preview.png" alt="" width="600" />
+  <img src=".\images\images-removebg-preview.png" alt="" width="300" />
 </div>
 > **[CapsWriter-Offline](https://github.com/HaujetZhao/CapsWriter-Offline)的非官方 Android 客户端**，感谢原作者的开源精神；协议、配置项和交互灵感来自上游项目。
 
