@@ -27,6 +27,8 @@
     <string name="ignore_battery_optimization">忽略优化</string>
     <string name="battery_optimized">可能被系统限制</string>
     <string name="battery_ignored">已忽略</string>
+    <string name="hide_recents">隐藏最近任务</string>
+    <string name="hide_recents_desc">开启后按 Home 不会出现在最近任务列表；关闭后可以从最近任务切回。默认开启。</string>
 
     <string name="section_output">3 · 识别与输出</string>
     <string name="language">识别语言</string>
@@ -54,6 +56,8 @@
     <string name="mode_tap">点击开关</string>
     <string name="calibrate">校准位置</string>
     <string name="reset_position">重置所有校准</string>
+    <string name="pass_through_short_tap">短按穿透到输入法</string>
+    <string name="pass_through_short_tap_desc">按住时正常录音；短按不录音，而是把点击转发给下层输入法的语音键，让输入法自己的短按功能不受透明悬浮窗影响。需要无障碍手势权限，更新后请关闭再开启一次无障碍服务。</string>
     <string name="calibrate_help">点“校准位置”后，应用会在输入法上方显示一个蓝色虚线框。宽高可分别调整；把框拖到输入法语音键的位置再保存。每个输入法、横竖屏会分别记住自己的位置和大小。</string>
     <string name="section_hotwords">6 · 客户端热词</string>
     <string name="hotwords_hint">每行一个词，或“错词=>正确词”</string>

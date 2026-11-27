@@ -1,12 +1,19 @@
 # CapsWriter 安卓离线语音输入
 
-[中文](#capswriter-安卓离线语音输入) · [English](#english)
+[中文](#capswriter-安卓离线语音输入) · [English](#english) · [更新日志](CHANGELOG.md)
 
 > **非官方 Android 客户端**，兼容 [CapsWriter-Offline](https://github.com/HaujetZhao/CapsWriter-Offline)（MIT License，作者 Haujet Zhao）。本项目与上游作者无隶属关系；协议、配置项和交互灵感来自上游项目。
 
 一个用 **Kotlin** 写的 Android 客户端，连接局域网里的 [CapsWriter-Offline](https://github.com/HaujetZhao/CapsWriter-Offline) 服务端，把语音识别结果直接写进当前输入框。
 
 它的交互刻意做得很轻：**不替换你的输入法**，而是在输入法弹出时，于输入法按键上方显示一个**完全透明的悬浮触摸区**。按住说话、松手上屏；位置和大小都可以手动校准，对齐到输入法自带的麦克风键或任意按键上。
+
+## v1.5.0 更新
+
+- 新增“隐藏最近任务”开关，默认开启；关闭后可以从最近任务列表切回 App。
+- 新增“短按穿透到输入法”开关（按住说话模式）：按住时正常录音，短按不再被透明悬浮窗吞掉，而是通过无障碍手势把点击转发给下层输入法的语音键，让输入法自己的短按功能不受影响。
+- 穿透需要 `canPerformGestures`。更新后请把 CapsWriter 无障碍服务关闭再开启一次；如果系统没有授予手势能力，短按会保持无操作，只有长按录音生效。
+- 版本号 1.5.0 / versionCode 7。
 
 ## v1.4.0 更新
 
@@ -16,14 +23,30 @@
 - README 增加英文版本，并补充上游仓库与 MIT License 归属。
 - 版本号 1.4.0 / versionCode 6。
 
+## v1.2.0 更新
+
+- 加入**从最近任务列表隐藏**：`MainActivity` 设置 `android:excludeFromRecents="true"`，按 Home 后不会出现在最近任务里；回应用请点通知或桌面图标。
+- 按 `config_client.py` 补齐手机端常用项：
+  - `language`：自动 / 中文 / 英文 / 日文选择。
+  - `threshold`：可调“最短录音”时长，短于该时长按误触取消。
+  - `trash_punc`：可选的末尾标点清理（`，。,.`）。
+  - `save_audio` / `audio_name_len`：可选保存 16 kHz 单声道 WAV，文件名取识别结果前 20 字。
+- 新增“3 · 识别与输出”设置卡片。
+
+## v1.1.0 更新
+
+- 悬浮按钮的**宽度、高度可独立调整**，并按“输入法 + 横竖屏”分别保存校准配置，不再用一个固定比例适配所有键盘。
+- 强化上屏链路：搜索所有应用窗口的焦点节点/可编辑父节点/可编辑候选，过滤掉输入法自己的窗口，优先 `ACTION_SET_TEXT`，失败再 `ACTION_PASTE`。
+- 新增**客户端热词**：热词会作为 `context` 发给服务端，同时支持 `错词=>正确词` 本地替换和 `re:` 正则替换。
+
 ## 功能
 
 - 手动填写 CapsWriter-Offline 服务端地址，支持 `IP`、`IP:端口`、`ws://`、`wss://`，默认端口 `6016`（旧版服务端用 `6006`）。
 - 通过无障碍服务检测输入法窗口，键盘弹出时显示透明悬浮窗，键盘收起时自动移除。
 - 悬浮窗使用 `TYPE_ACCESSIBILITY_OVERLAY`，层级在输入法之上；**不是**“显示在其他应用上层”权限，普通应用悬浮窗会被输入法盖住。
 - 悬浮窗默认完全透明，只保留触摸区域；录音/识别状态由震动和常驻通知反馈。
-- 按住说话 / 点击开关两种模式。
-- 应用默认从最近任务列表隐藏，避免语音输入工具出现在任务切换界面。
+- 按住说话 / 点击开关两种模式；按住模式下短按可穿透到输入法语音键，长按用于 CapsWriter。
+- 可从最近任务列表隐藏（默认开启，可在权限卡片中关闭）。
 - 识别语言可选自动/中文/英文/日文；可调最短录音时长；可清理末尾标点；可保存 WAV 录音。
 - 校准模式：显示蓝色虚线框，**宽度和高度分别调整**，拖动到输入法按键位置后保存；位置和大小按 **输入法 + 横竖屏** 分别记忆，Gboard、搜狗、小艺等不同键盘可以各自适配。
 - 录音直接以 16 kHz 单声道 float32 PCM 通过 WebSocket 流式发送，符合 CapsWriter-Offline v2.x 协议。
@@ -42,8 +65,11 @@
 仓库根目录已经附带一个可直接安装的 **debug APK**：
 
 ```text
-CapsWriter-Offline-Android-v1.4.0-debug.apk
+CapsWriter-Offline-Android-v1.5.0-debug.apk
 ```
+
+它是用 Android 调试证书签名的，适合自己侧载使用；要上架或长期分发，请用自己的 release keystore 重新签名。
+
 ## 构建
 
 ```bash
@@ -71,15 +97,16 @@ $env:ANDROID_HOME = "C:\path\to\Android\Sdk"
 2. 授予 **麦克风** 和 **通知** 权限。
 3. 点 **去开启**，在系统无障碍设置里开启 **CapsWriter 悬浮语音输入**。
    - Android 13 及以上，侧载应用的无障碍开关可能被“受限设置”拦住。到系统“应用信息 → CapsWriter 语音输入 → 右上角菜单”里允许受限制的设置，再回来开启。
+   - 从旧版更新到 1.5.0 后，请把该无障碍服务**关闭再开启一次**，让新增的 `canPerformGestures` 生效；否则“短按穿透”不会工作。
 4. 打开 **启用悬浮语音**。App 会在前台启动一个麦克风类型的前台服务；这一步必须在 App 可见时完成（Android 14 的后台麦克风限制）。
 5. 点 **校准位置**。App 会聚焦测试输入框并弹出键盘；把蓝色虚线框拖到输入法的语音键位置，分别调好宽度/高度后点 **保存**。换一个输入法（或横屏）后再各校准一次，App 会自动记住对应配置。
-6. 回到任意聊天/笔记 App，唤起输入法，按住悬浮窗位置说话，松手后文字会写入当前光标处。
+6. 回到任意聊天/笔记 App，唤起输入法，按住透明区域说话，松手后文字会写入当前光标处。
 7. 可选：在“客户端热词”里填入常用人名、地名或 `错词=>正确词`，保存后下一次识别生效。
 8. 可选：在“识别与输出”里选择语言、最短录音时长、末尾标点清理和 WAV 录音。
 
 > 应用已从最近任务列表隐藏；按 Home 后请通过通知或桌面图标回到应用。
 
-> 悬浮窗在视觉上完全不可见，位置就是校准框的位置。找不到时，回到 App 点“校准位置”重新看一遍；或先点“重置位置”。
+> 透明区域在视觉上完全不可见，位置就是校准框的位置。找不到时，回到 App 点“校准位置”重新看一遍；或先点“重置位置”。
 
 ## 实现要点
 
@@ -175,6 +202,32 @@ trash_punc_thresh = 8
 
 无障碍 API 的能力边界就在这里：Flutter/WebView/远程桌面等如果完全不向无障碍树暴露可写输入节点，不成为当前输入法、不使用 root/Shizuku 就无法直接注入文字，只能走剪贴板。
 
+## 与 config_client.py 对照
+
+对照的是本机 `D:\CapsWriter-Offline\config_client.py`（版本 2.6）。
+
+| config_client.py | 手机端状态 |
+| --- | --- |
+| `addr` / `port` | ✅ 合并为手动服务器地址，支持默认 `6016` |
+| `shortcuts` / `hold_mode` | ✅ 悬浮窗“按住说话 / 点击开关”，快捷键改为屏幕触摸 |
+| `threshold` | ✅ “最短录音”滑块，默认 0.30 秒 |
+| `paste` / `restore_clip` | ✅ 优先 `ACTION_SET_TEXT`，失败粘贴；粘贴后恢复剪贴板 |
+| `paste_apps` | ➖ 未强制按 App 粘贴；手机统一先 `ACTION_SET_TEXT`，失败才 `ACTION_PASTE`，避免 QQ 等可直接写入的 App 被强制走剪贴板 |
+| `enter_apps` | ❌ 未实现“输出后自动回车”，需要针对具体 App 做风险控制 |
+| `save_audio` / `audio_name_len` | ✅ 可选 WAV，保存到 `Music/CapsWriter`，文件名取结果前 20 字 |
+| `context` | ✅ 客户端热词作为 `context` 发送 |
+| `language` | ✅ 自动/中文/英文/日文 |
+| `trash_punc` / `trash_punc_thresh` | ✅ 可选去掉末尾 `，。,.`；阈值按语义单位可调（0–50），微信强制去掉 |
+| `trash_punc_apps` | ⚠️ 目前内置微信强制去标点，未做任意 App 名单 |
+| `traditional_convert` | ❌ 未内置简繁转换表 |
+| `hot` / `hot_thresh` / `hot_similar` / `hot_rule` | ⚠️ 已有 `词`、`错词=>正确词`、`re:` 正则；未实现桌面端的音素模糊 RAG |
+| `llm_enabled` / `llm_stop_key` | ❌ 手机端未接入桌面 LLM 角色系统 |
+| `enable_tray` | ✅ 用常驻通知替代托盘 |
+| `log_level` | ⚠️ 有内存诊断日志，未做等级配置 |
+| `mic_seg_duration` / `mic_seg_overlap` | ✅ 固定 60/4，与服务端默认一致；暂未在 UI 暴露 |
+| `file_seg_*` / `file_save_*` | ❌ 未做音频文件转录 |
+| `udp_broadcast` / `udp_control` | ❌ 未做 UDP 输出/远程控制 |
+
 手机端额外补了桌面没有的：按输入法+横竖屏保存悬浮位置/大小、通知栏、电池优化引导、最近任务隐藏。
 
 > 手机端默认关闭 `save_audio`，避免无意保存隐私音频；需要时在“识别与输出”卡片打开。桌面版默认开启，这一点是有意不同。
@@ -257,149 +310,70 @@ app/src/main/java/com/capswriter/offline/
 
 ## 验证情况
 
+- `testDebugUnitTest`：22 个测试全部通过（7 个地址解析 + 6 个热词解析/替换 + 9 个末尾标点/阈值测试）。
+- `assembleDebug`：构建成功，versionName 1.5.0 / versionCode 7。
+- `lintDebug`：无 Error，仅有依赖版本、内部资源等 warning。
+- APK 通过 `apksigner verify`，使用 v2 签名。
+- 当前环境没有连接 Android 真机/模拟器，因此悬浮层级、输入法检测、WAV 保存和具体机型兼容性仍需在手机上实测。首次使用建议先在本页“试一下”输入框里验证。
+
 ---
 
 # English
 
-[中文](#capswriter-安卓离线语音输入) · [English](#english)
+**CapsWriter Android Voice Input** is an **unofficial Kotlin Android client** for [CapsWriter-Offline](https://github.com/HaujetZhao/CapsWriter-Offline) by Haujet Zhao (MIT License). It is not affiliated with the upstream author. The protocol, config semantics and interaction ideas are based on the upstream project.
 
-> **Unofficial Android client** compatible with [CapsWriter-Offline](https://github.com/HaujetZhao/CapsWriter-Offline) (MIT License, by Haujet Zhao). This project is not affiliated with the upstream author; the protocol, configuration semantics, and interaction ideas are inspired by the upstream project.
-
-An Android client written in **Kotlin** that connects to a [CapsWriter-Offline](https://github.com/HaujetZhao/CapsWriter-Offline) server on your LAN and injects speech recognition results directly into the active input field.
-
-Its interaction is intentionally lightweight: **it does not replace your keyboard**. Instead, when the IME appears, a **fully transparent floating touch target** is displayed above the keyboard keys. Hold to speak, release to insert text; its position and size can be manually calibrated to align with your keyboard's built-in microphone key or any key you prefer.
-
-## v1.4.0 What's New
-
-- Removed automatic long-press paste fallback for WeChat; stopped requesting `canPerformGestures` to avoid UI automation and text-selection risks.
-- Restored `ACTION_SET_TEXT` priority for QQ and similar apps instead of forcing clipboard usage; falls back to `ACTION_PASTE` only if direct insertion fails, and copies to clipboard as a last resort.
-- Added **English UI**: full string translation in `values-en`; the entire app (UI, notifications, accessibility labels) automatically switches to English when the system language is set to English.
-- Added English documentation to README along with upstream repository and MIT License attribution.
-- Version 1.4.0 / versionCode 6.
+It keeps your existing keyboard. When the IME appears, a **fully transparent touch target** is placed above the keyboard. Hold it to record, release to insert the recognized text, and calibrate its position and size per IME/orientation.
 
 ## Features
 
-- Manual CapsWriter-Offline server address configuration: supports `IP`, `IP:port`, `ws://`, and `wss://`; default port `6016` (`6006` for older servers).
-- Accessibility-based IME window detection: shows the transparent overlay when the keyboard pops up and removes it automatically when hidden.
-- Uses `TYPE_ACCESSIBILITY_OVERLAY`, layered above the IME. It does **not** require the “Display over other apps” permission (standard app overlays get covered by the keyboard).
-- Completely transparent overlay by default, keeping only the touch hit region; recording/recognition states are indicated via haptic vibration and a persistent notification.
+- Manual CapsWriter-Offline server address: `IP`, `IP:port`, `ws://`, `wss://`; default port `6016` (`6006` for older servers).
+- Accessibility-based IME detection; the overlay is removed automatically when the keyboard hides.
+- Uses `TYPE_ACCESSIBILITY_OVERLAY`, which is layered above the IME. It does **not** require the “display over other apps” permission and does not replace the keyboard.
+- Independent width/height calibration, saved per IME and orientation.
 - Hold-to-talk and tap-to-toggle modes.
-- Hidden from the recent tasks list by default so the voice utility stays out of your app switcher.
-- Recognition language selection (Auto / Chinese / English / Japanese), adjustable minimum recording time, trailing punctuation trimming (with configurable short-sentence threshold), and optional WAV recording (16 kHz mono, saved to `Music/CapsWriter` when enabled).
-- Calibration mode: displays a blue dashed box with **independent width and height adjustment**. Drag it onto your keyboard's key and save; position and size are stored per **IME + orientation**, allowing separate profiles for Gboard, Sogou, Celia, etc.
-- Streams 16 kHz mono float32 PCM audio directly via WebSocket, complying with the CapsWriter-Offline v2.x protocol.
-- Client hotwords: supports recognition hints (sent to server `context`) as well as local `wrong=>correct` and `re:` regex replacements (see below).
-- Injects recognized text at the cursor via Accessibility `ACTION_SET_TEXT`, automatically falling back to `ACTION_PASTE`. Searches the active window, editable parent nodes of the focused node, and all editable candidates to minimize clipboard-only fallbacks.
-- If you switch apps during recognition, it prioritizes inserting into the newly active app's editable field, copying to the clipboard only when no writable node exists.
+- Optional recent-task hiding (enabled by default).
+- Hold-to-talk pass-through: a short tap is forwarded to the IME’s own voice key; a long hold records with CapsWriter.
+- Recognition language: auto / Chinese / English / Japanese.
+- Adjustable minimum recording time.
+- Optional trailing punctuation trimming with a configurable short-sentence threshold (mirrors `trash_punc_thresh`).
+- Optional WAV recording (16 kHz mono), disabled by default; saved under the app-specific `Music/CapsWriter` folder.
+- Client hotwords: bare words are sent as server `context`; `wrong=>correct` rules and `re:` regex rules are applied locally.
+- Text insertion: `ACTION_SET_TEXT` first, then `ACTION_PASTE`. QQ and similar apps are not forced through the clipboard. Apps that expose no writable accessibility node still fall back to the clipboard.
 - English UI via `values-en`; switch the system language to English to use it.
-- No root, Shizuku, or “Display over other apps” permission required. All settings are stored locally; recordings are disabled by default and stored in app-specific storage when enabled, with zero analytics uploaded.
+- No root, Shizuku or “display over other apps” permission.
 
 ## Requirements
 
 - Android 8.0 (API 26) or newer.
-- A running CapsWriter-Offline server on your computer (v2.x default `6016`, v1.x commonly `6006`).
-- Phone and computer on the same LAN, with the corresponding TCP port allowed through the computer firewall and the server listening on a LAN-accessible address (e.g., `0.0.0.0`).
-- Build: JDK 17, Android SDK Platform 35, Gradle 8.9 (configured with AGP 8.7.3 / Kotlin 2.0.21).
+- A running CapsWriter-Offline server (v2.x default `6016`, older versions often `6006`).
+- Phone and computer on the same LAN; allow the TCP port through the computer firewall and bind the server to a LAN-accessible address.
+- Build: JDK 17, Android SDK Platform 35, Gradle 8.9.
 
-A prebuilt, ready-to-install **debug APK** is included in the repository root:
+## Install
+
+Use the prebuilt debug APK:
 
 ```text
-CapsWriter-Offline-Android-v1.4.0-debug.apk
+CapsWriter-Offline-Android-v1.5.0-debug.apk
 ```
 
-It is signed with the Android debug certificate for sideloading. For public distribution, sign a release build with your own keystore.
+It is signed with the Android debug certificate, intended for sideloading. For public distribution, sign a release build with your own keystore.
 
-## Build
-
-```bash
-# Point to your own JDK / Android SDK
-export JAVA_HOME=/path/to/jdk-17
-export ANDROID_HOME=/path/to/Android/Sdk
-
-./gradlew assembleDebug
-# Output: app/build/outputs/apk/debug/app-debug.apk
-```
-
-Windows PowerShell:
-
-```powershell
-$env:JAVA_HOME = "C:\path\to\jdk-17"
-$env:ANDROID_HOME = "C:\path\to\Android\Sdk"
-.\gradlew.bat assembleDebug
-```
-
-The repository's `local.properties` is for local builds only and should not be committed; refer to `local.properties.example`.
-
-## First-Time Setup
+## Setup
 
 1. Start the CapsWriter-Offline server on your computer.
-2. Open the app, enter your computer's LAN address (e.g., `192.168.1.100:6016`), and tap **Save and test**.
-3. Grant **Microphone** and **Notifications** permissions.
-4. Tap **Enable** and turn on **CapsWriter floating voice input** in Android Accessibility settings.
-   - On Android 13+, the accessibility toggle for sideloaded apps may be blocked by “Restricted settings”. Go to system “App info → CapsWriter → top-right menu” and select “Allow restricted settings”, then return to enable it.
-5. Turn on **Enable floating voice input**. The app starts a microphone-type foreground service; this step must be completed while the app is visible (due to Android 14 background microphone restrictions).
-6. Tap **Calibrate position**. The app focuses a test input field and opens the keyboard; drag the blue dashed box over your keyboard's voice key, adjust width/height separately, and tap **Save**. Repeat once when switching keyboards or screen orientation so the app remembers each profile.
-7. Open any chat or note app, bring up the keyboard, hold the floating area to speak, and release to insert text at the cursor.
-8. Optional: Add frequently used names, places, or `wrong=>correct` rules in “Client hotwords”; changes take effect on the next recording after saving.
-9. Optional: Configure recognition language, minimum recording duration, trailing punctuation trimming, and WAV recording under “Recognition & Output”.
+2. Open the app, enter `computer-ip:6016`, then tap **Save and test**.
+3. Grant microphone and notification permissions.
+4. Enable **CapsWriter floating voice input** in Android accessibility settings. On Android 13+, sideloaded apps may be blocked by “Restricted settings”; allow restricted settings in the app info menu first. After updating to 1.5.0, turn the service off and on once so the new gesture permission is applied.
+5. Turn on **Enable floating voice input**. This starts a microphone-type foreground service from the visible app (required by Android 14).
+6. Tap **Calibrate position**, open the test keyboard, drag/resize the blue box over the keyboard’s voice key, and save.
+7. In any app, open the keyboard, hold the transparent area, speak, and release.
 
-> The app is hidden from recent tasks; after pressing Home, return to the app via its notification or launcher icon.
+By default the app is hidden from recent tasks; return through the notification or the launcher icon. Disable **Hide from recent tasks** if you prefer to switch back from recents.
 
-> The overlay is completely invisible—its location matches the calibration box. If you lose track of it, return to the app and tap “Calibrate position” to view it again, or tap “Reset position”.
+## Hotwords
 
-## Implementation Notes
-
-### Why Not a Standard Overlay?
-
-Android's `TYPE_APPLICATION_OVERLAY` is explicitly placed beneath the IME window:
-
-> Application overlay windows are displayed above all activity windows ... but below critical system windows like the status bar or IME.
-
-Therefore, buttons created with standard “Display over other apps” permissions get covered by the keyboard. This project uses the Accessibility Service's `TYPE_ACCESSIBILITY_OVERLAY` with `FLAG_NOT_FOCUSABLE | FLAG_NOT_TOUCH_MODAL | FLAG_LAYOUT_IN_SCREEN` (and **without** `FLAG_ALT_FOCUSABLE_IM`), keeping the touch target above the IME without stealing input focus or dismissing the keyboard.
-
-### IME Detection
-
-Searches `AccessibilityService.windows` for the `TYPE_INPUT_METHOD` window and uses its `boundsInScreen` as the keyboard region, driven by `TYPE_WINDOWS_CHANGED` / `TYPE_WINDOW_STATE_CHANGED` / `TYPE_VIEW_FOCUSED` events plus a 300ms polling fallback. Mounts the transparent touch target when the keyboard appears and removes it when hidden.
-
-Coordinates are normalized relative to the IME window bounds:
-
-```text
-profileKey = currentImePackage + "_" + orientation
-ratioX = (targetCenterX - ime.left) / ime.width
-ratioY = (targetCenterY - ime.top) / ime.height
-width  = calibratedWidth (dp)
-height = calibratedHeight (dp)
-```
-
-This keeps the touch area aligned across keyboard switches, orientation changes, and dynamic keyboard height adjustments, with independent size and position per IME/orientation. Because Android window hit regions must be rectangular, simply size the box to match your keyboard's voice key (a square region approximates circular/irregular keys well).
-
-### Audio Protocol
-
-Each recording session opens a new WebSocket requesting subprotocol `binary`, sending JSON text frames:
-
-```json
-{
-  "task_id": "uuid",
-  "source": "mic",
-  "data": "<base64 little-endian float32 PCM>",
-  "is_final": false,
-  "time_start": 1730000000.0,
-  "seg_duration": 60.0,
-  "seg_overlap": 4.0,
-  "context": "CapsWriter, voice input, correct word",
-  "language": "auto"
-}
-```
-
-- 16000 Hz sample rate, mono, float32, sent in 100ms chunks.
-- Sends a closing frame with `data: ""` and `is_final: true` upon release.
-- `context` is populated from client hotwords and utilized by prompt-aware engines like Fun-ASR-Nano (ignored by other engines).
-- Parses `RecognitionMessage` responses from the server and inserts the `text` field when `is_final=true`.
-- Compatible with server v2.x; if using v1.x, update the port accordingly and verify protocol compatibility on the server.
-
-### Client Hotwords
-
-Enter one rule per line in “Client hotwords” on the main screen:
+One item per line:
 
 ```text
 CapsWriter
@@ -408,118 +382,60 @@ wrong=>correct
 re:helo=>hello
 ```
 
-- Plain words without `=>` are sent to the server as `context` hints (ideal for names, places, and domain terms).
-- `wrong=>correct` rules are both added to `context` and applied as **literal local replacements** on the final recognized text.
-- `re:pattern=>replacement` applies regular expression replacement (`$1` capture groups supported).
-- Literal replacements are sorted by source length descending so longer phrases match before shorter substrings.
-- Client-side replacements run after server recognition finishes, meaning exact replacements work even if the server engine does not support `context`.
+- Bare words are added to the server `context` prompt.
+- `wrong=>correct` is a literal local replacement and is also added to context.
+- `re:pattern=>replacement` is a local regular-expression replacement (`$1` groups are supported).
+- Longer literal sources are replaced first.
 
-### Trailing Punctuation Threshold
+## config_client.py parity
 
-In `config_client.py`:
-
-```python
-trash_punc = '，。,.'
-trash_punc_thresh = 8
-```
-
-The actual behavior **strips trailing punctuation when the semantic unit count is $\le 8$, and preserves punctuation when $> 8$**, keeping normal punctuation on longer sentences. The Android client mirrors this exact logic with a configurable threshold from 0 to 50:
-
-- `8` (default): trims trailing punctuation for utterances with $\le 8$ semantic units.
-- `0`: always trims trailing punctuation (threshold disabled).
-- `50`: trims trailing punctuation on almost all short-to-medium utterances.
-- Semantic unit counting: 1 Chinese character = 1, 1 English word = 1, 1 number = 1.
-- WeChat (`com.tencent.mm`) bypasses the threshold and always trims trailing punctuation, matching `trash_punc_apps=['WeiXin.exe']`.
-
-### Text Insertion
-
-1. Enumerates the active window and all application windows to collect `FOCUS_INPUT` nodes, editable parent nodes of the focused node, and editable nodes within the active window.
-2. Prioritizes editable nodes in the currently active app; never writes into background apps.
-3. Builds the updated text at the current cursor/selection and executes `ACTION_SET_TEXT`.
-4. If `ACTION_SET_TEXT` fails, copies text to the clipboard, executes `ACTION_PASTE`, and restores the previous clipboard contents afterward.
-5. If no writable node exists, the field blocks pasting, or you switched to an app with no input field during recognition, copies the text to the clipboard and notifies you.
-
-This marks the boundary of Android Accessibility APIs: if apps like Flutter, WebView, or remote desktop clients do not expose writable input nodes to the accessibility tree, direct text injection is impossible without becoming the active IME or using root/Shizuku, so clipboard fallback is used.
-
-> `save_audio` is disabled by default on mobile to avoid unintentionally storing private recordings; enable it in the “Recognition & Output” card when needed (unlike the desktop client, where it defaults to on).
-
-## Permissions
-
-| Permission | Purpose |
+| config_client.py | Android status |
 | --- | --- |
-| `RECORD_AUDIO` | Record audio and stream it to your LAN server |
-| `INTERNET` / `ACCESS_NETWORK_STATE` | WebSocket network connectivity |
-| `FOREGROUND_SERVICE` / `FOREGROUND_SERVICE_MICROPHONE` | Keep recording alive while holding to speak (required on Android 14+) |
-| `POST_NOTIFICATIONS` | Display persistent “Recording / Recognizing” notification |
-| `VIBRATE` | Haptic feedback on press and release |
-| `BIND_ACCESSIBILITY_SERVICE` | Detect IME window, display overlay, and inject text |
-| `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Optional keep-alive setting to prevent aggressive OEM background killing |
+| `addr` / `port` | ✅ manual server URL, default 6016 |
+| `shortcuts` / `hold_mode` | ✅ hold-to-talk / tap-to-toggle overlay |
+| `threshold` | ✅ minimum recording time slider |
+| `paste` / `restore_clip` | ✅ `ACTION_SET_TEXT` first, paste fallback; clipboard restored after paste |
+| `paste_apps` | ➖ not forced per app; direct text insertion first |
+| `enter_apps` | ❌ no auto-enter |
+| `save_audio` / `audio_name_len` | ✅ optional WAV, 20-char name suffix |
+| `context` | ✅ client hotwords are sent as `context` |
+| `language` | ✅ auto / Chinese / English / Japanese |
+| `trash_punc` / `trash_punc_thresh` | ✅ switch + 0–50 semantic-unit threshold; WeChat forced |
+| `trash_punc_apps` | ⚠️ only WeChat is forced |
+| `traditional_convert` | ❌ no conversion table |
+| `hot*` | ⚠️ literal/regex rules + context, no desktop phoneme RAG |
+| `llm_enabled` | ❌ no LLM roles |
+| `enable_tray` | ✅ foreground notification |
+| `log_level` | ⚠️ in-memory diagnostics, no level setting |
+| `mic_seg_duration` / `mic_seg_overlap` | ✅ fixed 60/4, matching server defaults |
+| `file_*` | ❌ no file transcription |
+| `udp_*` | ❌ no UDP broadcast/control |
 
-The app never requests “Display over other apps”, root, or Shizuku.
+Mobile-only additions: per-IME/orientation overlay profiles, recent-task hiding, notification channel, battery-optimization guidance.
 
-## Troubleshooting & Limitations
+## Build
 
-**Floating overlay does not appear**
-- Ensure “Enable floating voice input” is toggled on.
-- Verify the Accessibility Service is enabled and connected; some OEM ROMs require locking the app in recent tasks.
-- The keyboard must be a genuine IME window; hardware keyboards or specialized full-screen IME modes may not trigger window detection.
-- If the app displays “Background service not running”, tap the overlay region or reopen the app to restart it.
-
-**No response when pressing the overlay**
-- Check Microphone and Notifications permissions.
-- Verify server reachability: opening `http://<computer-ip>:6016` in your phone's browser may not serve a webpage, but it should not refuse connection; check the server logs to confirm client connection attempts.
-- On Android 14+, starting the microphone foreground service from the background is blocked by the OS; open the app in the foreground first.
-
-**Recognition succeeds, but text is not inserted**
-- v1.4.0 scans the active window, focused parent nodes, and all editable candidates, trying `ACTION_SET_TEXT` first and `ACTION_PASTE` second (with EditText/TextInput class-name fallbacks). QQ normally receives direct text injection without touching the clipboard.
-- If both accessibility actions fail in WeChat, text still falls back to the clipboard; v1.4.0 removed the automatic long-press context menu workaround to avoid accidental text selection or replacement.
-- If it still only copies to the clipboard, check the last “Insertion diagnostics” entry in the in-app “Diagnostic logs”, which lists candidate node class names, package names, and editable/focused flags. Share that line and the target app name to diagnose whether no node was found or the node rejected the action.
-- Apps that expose no writable input nodes to Android's accessibility tree (certain WebViews, Flutter apps, remote desktops, in-game chat boxes) cannot receive direct text injection due to Android's permission model—manual paste from the clipboard is required.
-- If you switched apps mid-recognition, text is written to the new app's active editable field if available, or copied to the clipboard otherwise.
-
-**Overlay position is misaligned**
-- Recalibrate; position and dimensions are saved per “IME + orientation”, so Gboard, Sogou, etc., each need one-time calibration.
-- Because Android window hit regions must be rectangular, adjust width and height to closely match the target key.
-- Switching keyboards automatically loads the corresponding profile (or falls back to the default position if uncalibrated).
-- Adjusting the width/height sliders on the main screen updates the active IME profile while preserving its center point.
-
-**Connection timeout**
-- If the server only listens on `127.0.0.1`, your phone cannot reach it; bind the server to `0.0.0.0` or your LAN IP.
-- Ensure TCP port `6016` (or `6006` for v1.x) is allowed through your computer's firewall.
-- Supports `ws://` and `wss://` with publicly trusted certificates; self-signed certificates are rejected by OkHttp by default.
-
-**Cannot enable Accessibility on Android 13+**
-- Sideloaded APKs trigger “Restricted settings”. Open system Settings → Apps → CapsWriter → top-right menu → “Allow restricted settings”, then enable the Accessibility Service.
-- Some OEM ROMs also require enabling Auto-start / Background activity and disabling battery optimization.
-
-## Project Structure
-
-```text
-app/src/main/java/com/capswriter/offline/
-├── audio/
-│   ├── AudioCapture.kt          # 16 kHz float32 PCM capture
-│   ├── AudioWavWriter.kt        # Optional WAV file writer
-│   └── VoiceSession.kt          # Full lifecycle of a push-to-talk session
-├── net/
-│   ├── CapsWriterSocket.kt      # CapsWriter-Offline WebSocket protocol
-│   ├── NetClient.kt             # OkHttp singleton
-│   └── ServerProbe.kt           # Connection test probe
-├── service/
-│   ├── CapsWriterAccessibilityService.kt  # IME detection + text injection
-│   ├── OverlayController.kt              # Transparent overlay & calibration panel
-│   ├── TextInserter.kt                   # ACTION_SET_TEXT / paste logic
-│   └── VoiceForegroundService.kt         # Microphone foreground service
-├── ui/MainActivity.kt
-└── util/                        # Config, state, logs, URL parsing, hotwords, output trimming
-    ├── HotwordProcessor.kt      # Client hotword parsing & replacement
-    └── OutputTextProcessor.kt   # Trailing punctuation trimming
+```bash
+export JAVA_HOME=/path/to/jdk-17
+export ANDROID_HOME=/path/to/Android/Sdk
+./gradlew assembleDebug
+# app/build/outputs/apk/debug/app-debug.apk
 ```
+
+## Limitations
+
+- Android accessibility APIs cannot type into an app that exposes no writable input node (some WebView/Flutter/remote-desktop/game fields). The app then copies to the clipboard.
+- A fully transparent overlay still has a rectangular hit region; Android does not allow an arbitrary non-rectangular window touch region. Size it to match the key.
+- The overlay profile depends on the IME package and orientation; calibrate each keyboard once.
+- Recent-task hiding is optional and enabled by default.
+- Short-tap pass-through asks the accessibility service to inject a tap after temporarily making the overlay non-touchable. It only applies in hold-to-talk mode; if gesture permission is missing or the IME ignores synthetic taps, only long-press recording works.
+- Self-signed `wss://` certificates are rejected by OkHttp.
 
 ## Privacy
 
-Audio is sent exclusively to the CapsWriter-Offline server address you configure, with no third-party servers involved. Recordings are not saved unless you manually enable WAV recording, and logs only record connection states and recognized text lengths—never audio content. Recognized text appears in the in-app “Latest result” view and clipboard fallback, so please handle sensitive text accordingly.
+Audio is sent only to the server address you enter. Recordings are not saved unless you enable WAV recording; logs contain connection status and text lengths, not audio. Recognized text is kept in the in-app “latest result” and may be copied to the clipboard.
 
-## Upstream and License
+## Upstream and license
 
 - Upstream: [HaujetZhao/CapsWriter-Offline](https://github.com/HaujetZhao/CapsWriter-Offline) (MIT, Copyright (c) 2026 Haujet Zhao).
 - This Android client is an independent project and is not endorsed by the upstream author. See [LICENSE](LICENSE).

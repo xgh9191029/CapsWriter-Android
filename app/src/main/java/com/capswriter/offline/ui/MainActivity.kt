@@ -1,6 +1,7 @@
 package com.capswriter.offline.ui
 
 import android.Manifest
+import android.app.ActivityManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -37,8 +38,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var prefs: AppPrefs
 
     private var updatingSwitch = false
+    private var updatingRecents = false
     private var updatingSize = false
     private var updatingMode = false
+    private var updatingPassThrough = false
     private var updatingOutput = false
     private var receiverRegistered = false
 
@@ -56,6 +59,7 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         prefs = AppPrefs(this)
+        applyRecentsPreference()
 
         setupServer()
         setupPermissions()
@@ -94,6 +98,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        applyRecentsPreference()
         updateAll()
         if (prefs.enabled && hasMicrophonePermission()) {
             startVoiceServiceSafely()
@@ -182,6 +187,15 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        updatingRecents = true
+        binding.switchHideRecents.isChecked = prefs.hideFromRecents
+        updatingRecents = false
+        binding.switchHideRecents.setOnCheckedChangeListener { _, checked ->
+            if (updatingRecents) return@setOnCheckedChangeListener
+            prefs.hideFromRecents = checked
+            applyRecentsPreference()
+        }
+
         binding.btnMic.setOnClickListener {
             requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQ_MIC)
         }
@@ -195,6 +209,17 @@ class MainActivity : AppCompatActivity() {
         }
         binding.btnBattery.setOnClickListener {
             requestIgnoreBatteryOptimizations()
+        }
+    }
+
+    private fun applyRecentsPreference() {
+        runCatching {
+            val manager = getSystemService(ActivityManager::class.java)
+            manager.appTasks
+                .firstOrNull()
+                ?.setExcludeFromRecents(prefs.hideFromRecents)
+        }.onFailure {
+            AppLog.add(this, "Cannot update recent-task visibility: ${it.javaClass.simpleName}")
         }
     }
 
@@ -399,6 +424,14 @@ class MainActivity : AppCompatActivity() {
             prefs.holdToTalk = checkedId == R.id.btnModeHold
         }
 
+        updatingPassThrough = true
+        binding.switchPassThroughShortTap.isChecked = prefs.passThroughShortTap
+        updatingPassThrough = false
+        binding.switchPassThroughShortTap.setOnCheckedChangeListener { _, checked ->
+            if (updatingPassThrough) return@setOnCheckedChangeListener
+            prefs.passThroughShortTap = checked
+        }
+
         binding.btnCalibrate.setOnClickListener {
             if (!prefs.enabled) {
                 toast(getString(R.string.calibration_disabled))
@@ -475,12 +508,18 @@ class MainActivity : AppCompatActivity() {
         updatingSwitch = true
         binding.switchEnabled.isChecked = prefs.enabled
         updatingSwitch = false
+        updatingRecents = true
+        binding.switchHideRecents.isChecked = prefs.hideFromRecents
+        updatingRecents = false
         updatingSize = true
         updateSizeUi(prefs.buttonWidthDp, prefs.buttonHeightDp)
         updatingSize = false
         updatingMode = true
         binding.modeGroup.check(if (prefs.holdToTalk) R.id.btnModeHold else R.id.btnModeTap)
         updatingMode = false
+        updatingPassThrough = true
+        binding.switchPassThroughShortTap.isChecked = prefs.passThroughShortTap
+        updatingPassThrough = false
         updatingOutput = true
         binding.languageGroup.check(languageButtonId(prefs.language))
         binding.switchTrimPunctuation.isChecked = prefs.trimTrailingPunctuation

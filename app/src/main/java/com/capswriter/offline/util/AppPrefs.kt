@@ -27,6 +27,20 @@ class AppPrefs(context: Context) {
         get() = prefs.getBoolean(KEY_ENABLED, false)
         set(value) = prefs.edit().putBoolean(KEY_ENABLED, value).apply()
 
+    /** Hide the task from the recent-tasks list (the manifest default is still true). */
+    var hideFromRecents: Boolean
+        get() = prefs.getBoolean(KEY_HIDE_RECENTS, true)
+        set(value) = prefs.edit().putBoolean(KEY_HIDE_RECENTS, value).apply()
+
+    /**
+     * In hold-to-talk mode, a tap shorter than the hold threshold is forwarded
+     * to the IME instead of being recorded, so the keyboard's own voice key still
+     * works through the transparent overlay.
+     */
+    var passThroughShortTap: Boolean
+        get() = prefs.getBoolean(KEY_PASS_THROUGH_SHORT_TAP, true)
+        set(value) = prefs.edit().putBoolean(KEY_PASS_THROUGH_SHORT_TAP, value).apply()
+
     var holdToTalk: Boolean
         get() = prefs.getBoolean(KEY_HOLD, true)
         set(value) = prefs.edit().putBoolean(KEY_HOLD, value).apply()
@@ -176,6 +190,8 @@ class AppPrefs(context: Context) {
         private const val PROFILE_PREFIX = "overlay_profile_"
         private const val KEY_SERVER = "server_url"
         private const val KEY_ENABLED = "enabled"
+        private const val KEY_HIDE_RECENTS = "hide_from_recents"
+        private const val KEY_PASS_THROUGH_SHORT_TAP = "pass_through_short_tap"
         private const val KEY_HOLD = "hold_to_talk"
         private const val KEY_LANGUAGE = "language"
         private const val KEY_TRIM_PUNCT = "trim_trailing_punctuation"

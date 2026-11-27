@@ -199,6 +199,24 @@
                     android:textColor="@color/on_surface_variant"
                     android:textSize="12sp" />
 
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchHideRecents"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:minHeight="44dp"
+                    android:text="@string/hide_recents"
+                    android:textColor="@color/on_surface"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="-6dp"
+                    android:text="@string/hide_recents_desc"
+                    android:textColor="@color/on_surface_variant"
+                    android:textSize="12sp" />
+
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
@@ -672,6 +690,24 @@
                         android:text="@string/mode_tap"
                         android:textSize="13sp" />
                 </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchPassThroughShortTap"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="7dp"
+                    android:minHeight="44dp"
+                    android:text="@string/pass_through_short_tap"
+                    android:textColor="@color/on_surface"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="-6dp"
+                    android:text="@string/pass_through_short_tap_desc"
+                    android:textColor="@color/on_surface_variant"
+                    android:textSize="12sp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"

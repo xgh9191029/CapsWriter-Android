@@ -1,9 +1,11 @@
 package com.capswriter.offline.service
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.GestureDescription
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.Path
 import android.graphics.PixelFormat
 import android.graphics.Point
 import android.graphics.Rect
@@ -56,6 +58,7 @@ class OverlayController(
     private val main = Handler(Looper.getMainLooper())
     private val inflater = LayoutInflater.from(ContextThemeWrapper(service, R.style.Theme_CapsWriter))
     private val touchSlop = ViewConfiguration.get(service).scaledTouchSlop
+    private val shortTapMs = 220L
 
     private var targetBinding: OverlayTargetBinding? = null
     private var targetParams: WindowManager.LayoutParams? = null
@@ -76,6 +79,9 @@ class OverlayController(
 
     private var pressing = false
     private var moved = false
+    private var touching = false
+    private var holdTriggered = false
+    private var holdStartRunnable: Runnable? = null
     private var downRawX = 0f
     private var downRawY = 0f
     private var dragStartX = 0
@@ -461,8 +467,27 @@ class OverlayController(
                 downRawX = event.rawX
                 downRawY = event.rawY
                 moved = false
-                pressing = prefs.holdToTalk && voice.startRecording()
-                if (pressing) haptic(18)
+                touching = true
+                holdTriggered = false
+                holdStartRunnable?.let { main.removeCallbacks(it) }
+                holdStartRunnable = null
+                if (prefs.holdToTalk && prefs.passThroughShortTap) {
+                    // Wait briefly before recording. If the finger lifts first, the
+                    // tap is forwarded to the IME key underneath instead of being
+                    // swallowed by the transparent accessibility overlay.
+                    val start = Runnable {
+                        holdStartRunnable = null
+                        if (!touching) return@Runnable
+                        holdTriggered = true
+                        pressing = voice.startRecording()
+                        if (pressing) haptic(18)
+                    }
+                    holdStartRunnable = start
+                    main.postDelayed(start, shortTapMs)
+                } else {
+                    pressing = prefs.holdToTalk && voice.startRecording()
+                    if (pressing) haptic(18)
+                }
                 return true
             }
 
@@ -471,15 +496,31 @@ class OverlayController(
                     kotlin.math.abs(event.rawY - downRawY) > touchSlop
                 ) {
                     moved = true
+                    holdStartRunnable?.let {
+                        main.removeCallbacks(it)
+                        holdStartRunnable = null
+                        if (!pressing && !holdTriggered) {
+                            holdTriggered = true
+                            pressing = voice.startRecording()
+                            if (pressing) haptic(18)
+                        }
+                    }
                 }
                 return true
             }
 
             MotionEvent.ACTION_UP -> {
+                touching = false
+                holdStartRunnable?.let {
+                    main.removeCallbacks(it)
+                    holdStartRunnable = null
+                }
                 if (prefs.holdToTalk) {
                     if (pressing) {
                         voice.stopRecording()
                         haptic(12)
+                    } else if (prefs.passThroughShortTap && !moved && !holdTriggered) {
+                        forwardTap()
                     }
                 } else if (!moved) {
                     val state = voice.state
@@ -491,18 +532,60 @@ class OverlayController(
                     }
                 }
                 pressing = false
+                holdTriggered = false
                 return true
             }
 
             MotionEvent.ACTION_CANCEL -> {
+                touching = false
+                holdStartRunnable?.let {
+                    main.removeCallbacks(it)
+                    holdStartRunnable = null
+                }
                 if (pressing) {
                     voice.cancelRecording(service.getString(R.string.state_cancelled))
                 }
                 pressing = false
+                holdTriggered = false
                 return true
             }
         }
         return false
+    }
+
+    /**
+     * The overlay normally consumes the touch. For a short tap we temporarily make
+     * it non-touchable and inject a tap at the same screen position, so the IME's own
+     * voice key receives the click. This is the only way to have both gesture
+     * recognition and touch pass-through on the same pixels.
+     */
+    private fun forwardTap() {
+        val params = targetParams ?: return
+        val x = params.x + params.width / 2f
+        val y = params.y + params.height / 2f
+        setTargetTouchable(false)
+        main.postDelayed({
+            val path = Path().apply { moveTo(x, y) }
+            val gesture = GestureDescription.Builder()
+                .addStroke(GestureDescription.StrokeDescription(path, 0, 60))
+                .build()
+            val dispatched = runCatching {
+                service.dispatchGesture(gesture, null, null)
+            }.getOrDefault(false)
+            AppLog.add(service, "Short tap forwarded to IME at ($x, $y): $dispatched")
+            main.postDelayed({ setTargetTouchable(true) }, if (dispatched) 180 else 0)
+        }, 60)
+    }
+
+    private fun setTargetTouchable(touchable: Boolean) {
+        val params = targetParams ?: return
+        val view = targetBinding?.root ?: return
+        params.flags = if (touchable) {
+            params.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE.inv()
+        } else {
+            params.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+        }
+        runCatching { windowManager.updateViewLayout(view, params) }
     }
 
     private fun onCalibrationTouch(event: MotionEvent): Boolean {
@@ -573,8 +656,12 @@ class OverlayController(
         }
         targetBinding = null
         targetParams = null
+        holdStartRunnable?.let { main.removeCallbacks(it) }
+        holdStartRunnable = null
         dragging = false
         pressing = false
+        touching = false
+        holdTriggered = false
     }
 
     private fun removePanel() {

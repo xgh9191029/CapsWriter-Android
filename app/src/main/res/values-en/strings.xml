@@ -27,6 +27,8 @@
     <string name="ignore_battery_optimization">Ignore</string>
     <string name="battery_optimized">May be limited by the system</string>
     <string name="battery_ignored">Ignored</string>
+    <string name="hide_recents">Hide from recent tasks</string>
+    <string name="hide_recents_desc">When enabled, pressing Home does not leave the app in the recent-tasks list. Disable it to switch back from recents. Enabled by default.</string>
 
     <string name="section_output">3 · Recognition and output</string>
     <string name="language">Recognition language</string>
@@ -54,6 +56,8 @@
     <string name="mode_tap">Tap to toggle</string>
     <string name="calibrate">Calibrate position</string>
     <string name="reset_position">Reset all calibration</string>
+    <string name="pass_through_short_tap">Pass short taps to the keyboard</string>
+    <string name="pass_through_short_tap_desc">Hold to record normally; a short tap is not recorded and is forwarded to the keyboard’s voice key underneath, so the IME’s own short-press action is not blocked by the transparent overlay. Requires the accessibility gesture permission; turn the accessibility service off and on after updating.</string>
     <string name="calibrate_help">Tap “Calibrate position” to show a blue dashed target above the keyboard. Adjust width and height separately, drag it over your keyboard’s voice key, then save. Each IME/orientation gets its own profile.</string>
     <string name="section_hotwords">6 · Client hotwords</string>
     <string name="hotwords_hint">One word per line, or wrong=>correct</string>
