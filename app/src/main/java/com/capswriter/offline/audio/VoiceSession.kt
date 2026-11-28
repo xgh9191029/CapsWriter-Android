@@ -31,6 +31,7 @@ class VoiceSession(
     private val language: String,
     private val saveAudio: Boolean,
     private val minRecordMs: Int,
+    private val prewarm: AudioPrewarmer? = null,
     private val callback: Callback,
 ) {
 
@@ -54,6 +55,7 @@ class VoiceSession(
     @Volatile
     private var socketOpen = false
     private var capture: AudioCapture? = null
+    private var prewarmListener: AudioPrewarmer.Listener? = null
     private var socket: CapsWriterSocket? = null
     private var connectTimeout: Job? = null
     private var finalTimeout: Job? = null
@@ -117,29 +119,52 @@ class VoiceSession(
                     AppLog.add(context, "Cannot create recording file: ${it.message ?: it.javaClass.simpleName}")
                 }
             }
-            val audio = AudioCapture(
-                context = context,
-                onChunk = { bytes ->
-                    if (!stopped.get() && !completed.get()) {
-                        connection.sendAudio(bytes, isFinal = false, startTime = startTime)
-                        runCatching { wavWriter?.writeFloat32Le(bytes) }
-                            .onFailure {
-                                AppLog.add(context, "Recording write failed; saving disabled: ${it.message.orEmpty()}")
-                                wavWriter?.discard()
-                                wavWriter = null
-                            }
-                    }
-                },
-                onError = { message -> fail(context.getString(R.string.error_mic, message)) },
-            )
-            val started = audio.start()
-            if (started) capture = audio
-            ready.complete(started)
-            if (started) {
+            val sendChunk: (ByteArray) -> Unit = { bytes ->
+                if (!stopped.get() && !completed.get()) {
+                    connection.sendAudio(bytes, isFinal = false, startTime = startTime)
+                    runCatching { wavWriter?.writeFloat32Le(bytes) }
+                        .onFailure {
+                            AppLog.add(context, "Recording write failed; saving disabled: ${it.message.orEmpty()}")
+                            wavWriter?.discard()
+                            wavWriter = null
+                        }
+                }
+            }
+
+            val prewarmSink = object : AudioPrewarmer.Listener {
+                override fun onChunk(bytes: ByteArray) = sendChunk(bytes)
+
+                override fun onError(message: String) {
+                    fail(context.getString(R.string.error_mic, message))
+                }
+            }
+
+            val preRoll = prewarm?.attach(prewarmSink)
+            if (preRoll != null) {
+                prewarmListener = prewarmSink
+                preRoll.forEach(sendChunk)
+                ready.complete(true)
                 if (stopped.get() || completed.get()) {
-                    audio.stop()
+                    prewarm?.detach(prewarmSink)
+                    prewarmListener = null
                 } else if (!socketOpen) {
                     postState(VoiceState.RECORDING, context.getString(R.string.state_recording))
+                }
+            } else {
+                val audio = AudioCapture(
+                    context = context,
+                    onChunk = sendChunk,
+                    onError = { message -> fail(context.getString(R.string.error_mic, message)) },
+                )
+                val started = audio.start()
+                if (started) capture = audio
+                ready.complete(started)
+                if (started) {
+                    if (stopped.get() || completed.get()) {
+                        audio.stop()
+                    } else if (!socketOpen) {
+                        postState(VoiceState.RECORDING, context.getString(R.string.state_recording))
+                    }
                 }
             }
         }
@@ -239,6 +264,10 @@ class VoiceSession(
     private fun cleanup() {
         connectTimeout?.cancel()
         finalTimeout?.cancel()
+        prewarmListener?.let { sink ->
+            prewarm?.detach(sink)
+        }
+        prewarmListener = null
         runCatching { capture?.stop() }
         capture = null
         socket?.close()

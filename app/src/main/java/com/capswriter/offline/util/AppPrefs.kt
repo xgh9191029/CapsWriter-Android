@@ -41,6 +41,19 @@ class AppPrefs(context: Context) {
         get() = prefs.getBoolean(KEY_PASS_THROUGH_SHORT_TAP, true)
         set(value) = prefs.edit().putBoolean(KEY_PASS_THROUGH_SHORT_TAP, value).apply()
 
+    /**
+     * Keep AudioRecord open while the IME is visible and send the last 500 ms as
+     * pre-roll. Off by default because it keeps the microphone indicator visible.
+     */
+    var prewarmMic: Boolean
+        get() = prefs.getBoolean(KEY_PREWARM_MIC, false)
+        set(value) = prefs.edit().putBoolean(KEY_PREWARM_MIC, value).apply()
+
+    /** Version the user dismissed with “不再提醒”; a newer version prompts again. */
+    var skippedUpdateVersion: String
+        get() = prefs.getString(KEY_SKIPPED_UPDATE_VERSION, "").orEmpty()
+        set(value) = prefs.edit().putString(KEY_SKIPPED_UPDATE_VERSION, value).apply()
+
     var holdToTalk: Boolean
         get() = prefs.getBoolean(KEY_HOLD, true)
         set(value) = prefs.edit().putBoolean(KEY_HOLD, value).apply()
@@ -192,6 +205,8 @@ class AppPrefs(context: Context) {
         private const val KEY_ENABLED = "enabled"
         private const val KEY_HIDE_RECENTS = "hide_from_recents"
         private const val KEY_PASS_THROUGH_SHORT_TAP = "pass_through_short_tap"
+        private const val KEY_PREWARM_MIC = "prewarm_microphone"
+        private const val KEY_SKIPPED_UPDATE_VERSION = "skipped_update_version"
         private const val KEY_HOLD = "hold_to_talk"
         private const val KEY_LANGUAGE = "language"
         private const val KEY_TRIM_PUNCT = "trim_trailing_punctuation"

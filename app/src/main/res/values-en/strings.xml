@@ -2,6 +2,16 @@
 <resources>
     <string name="app_name">CapsWriter Voice Input</string>
     <string name="app_subtitle">Offline speech · Transparent overlay · Keep your keyboard</string>
+    <string name="settings_button">Settings</string>
+    <string name="back_button">Back</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_subtitle">Permissions, recognition, hotwords and diagnostics</string>
+    <string name="update_available_title">Update available</string>
+    <string name="update_available_message">Current version %1$s; latest GitHub version %2$s. Open GitHub to download the update?</string>
+    <string name="update_button_github">GitHub</string>
+    <string name="update_button_later">Not now</string>
+    <string name="update_button_never">Don’t remind me</string>
+    <string name="update_browser_failed">Cannot open a browser</string>
     <string name="accessibility_service_label">CapsWriter floating voice input</string>
     <string name="accessibility_service_description">Detects when the keyboard is shown, displays a transparent touch target above the keyboard, and inserts recognition results into the focused field. It does not collect or upload screen content.</string>
 
@@ -58,6 +68,8 @@
     <string name="reset_position">Reset all calibration</string>
     <string name="pass_through_short_tap">Pass short taps to the keyboard</string>
     <string name="pass_through_short_tap_desc">Hold to record normally; a short tap is not recorded and is forwarded to the keyboard’s voice key underneath, so the IME’s own short-press action is not blocked by the transparent overlay. Requires the accessibility gesture permission; turn the accessibility service off and on after updating.</string>
+    <string name="prewarm_mic">Microphone prewarm (low latency)</string>
+    <string name="prewarm_mic_desc">Keeps the microphone warm while the keyboard is visible and prepends the last ~500 ms of audio when you press, reducing startup delay and clipped first syllables. Uses more battery; released about 10 s after the keyboard hides. Off by default.</string>
     <string name="calibrate_help">Tap “Calibrate position” to show a blue dashed target above the keyboard. Adjust width and height separately, drag it over your keyboard’s voice key, then save. Each IME/orientation gets its own profile.</string>
     <string name="section_hotwords">6 · Client hotwords</string>
     <string name="hotwords_hint">One word per line, or wrong=>correct</string>

@@ -2,26 +2,32 @@
 
 [中文](#capswriter-安卓离线语音输入) · [English](#english)
 <div align="center">
-  <img src=".\images\images-removebg-preview.png" alt="" width="300" />
+  <img src="./images/images-removebg-preview.png" alt="CapsWriter Android" width="300" />
 </div>
 > **[CapsWriter-Offline](https://github.com/HaujetZhao/CapsWriter-Offline)的非官方 Android 客户端**，感谢原作者的开源精神；协议、配置项和交互灵感来自上游项目。
+>
+> GitHub 仓库：[xgh9191029/CapsWriter-Android](https://github.com/xgh9191029/CapsWriter-Android)
 
 一个用 **Kotlin** 写的 Android 客户端，连接局域网里的 [CapsWriter-Offline](https://github.com/HaujetZhao/CapsWriter-Offline) 服务端，把语音识别结果直接写进当前输入框。
 
 它的交互刻意做得很轻：**不替换你的输入法**，而是在输入法弹出时，于输入法按键上方显示一个**完全透明的悬浮触摸区**。按住说话、松手上屏；位置和大小都可以手动校准，对齐到输入法自带的麦克风键或任意按键上。
 ## 功能
 
+- 主页只保留**服务端地址**和**悬浮窗设置**；权限、识别输出、测试、热词、使用指南和诊断日志收进独立的“设置”页。
+- 跟随系统暗黑主题（Android 10+ 的深色模式）。
+- 每次启动自动检查 GitHub Release 更新；发现新版本时弹窗提供“不再提醒 / 暂不更新 / GitHub”三个选项。
 - 手动填写 CapsWriter-Offline 服务端地址，支持 `IP`、`IP:端口`、`ws://`、`wss://`，默认端口 `6016`（旧版服务端用 `6006`）。
 - 通过无障碍服务检测输入法窗口，键盘弹出时显示透明悬浮窗，键盘收起时自动移除。
 - 悬浮窗使用 `TYPE_ACCESSIBILITY_OVERLAY`，层级在输入法之上；**不是**“显示在其他应用上层”权限，普通应用悬浮窗会被输入法盖住。
 - 悬浮窗默认完全透明，只保留触摸区域；录音/识别状态由震动和常驻通知反馈。
-- 按住说话 / 点击开关两种模式。
-- 应用支持从最近任务列表隐藏，避免误清后台。
+- 按住说话 / 点击开关两种模式；按住模式下短按可穿透到输入法自己的语音键，长按由 CapsWriter 录音。
+- 可切换是否从最近任务列表隐藏，默认隐藏，避免误清后台。
+- 可选**麦克风预热（低延迟）**：输入法显示期间保持麦克风预热，按下时附带最近约 500ms 预录，减少启动延迟和第一个字被吞掉；默认关闭，会增加耗电，麦克风指示器会保持显示。
 - 识别语言可选自动/中文/英文/日文；可调最短录音时长；可清理末尾标点；可保存 WAV 录音。
 - 校准模式：显示蓝色虚线框，**宽度和高度分别调整**，拖动到输入法按键位置后保存；位置和大小按 **输入法 + 横竖屏** 分别记忆，Gboard、搜狗、小艺等不同键盘可以各自适配。
 - 录音直接以 16 kHz 单声道 float32 PCM 通过 WebSocket 流式发送，符合 CapsWriter-Offline v2.x 协议。
 - 客户端热词：支持识别提示词（发送到服务端 `context`）以及 `错词=>正确词` 的本地替换，详见下文。
-- 识别结果通过无障碍 `ACTION_SET_TEXT` 写入光标处
+- 识别结果通过无障碍 `ACTION_SET_TEXT` 写入光标处，失败后再尝试 `ACTION_PASTE`。
 - 如果识别期间切换了 App，优先写入新 App 当前的可编辑框；没有可写节点时才复制到剪贴板。
 - 所有配置本地保存。录音默认不保存，开启后写到应用专属目录；不上传任何分析数据。
 
@@ -52,17 +58,20 @@ $env:ANDROID_HOME = "C:\path\to\Android\Sdk"
 ```
 ## 首次使用
 
-1. 打开 App，填入电脑的局域网地址，例如 `192.168.1.100:6016`，点 **保存并测试**。
-2. 授予 **麦克风** 和 **通知** 权限。
-3. 点 **去开启**，在系统无障碍设置里开启 **CapsWriter 悬浮语音输入**。
+1. 打开 App，填入电脑的局域网地址，例如 `192.168.1.100:6016`，点 **保存并测试**（主页只保留服务端和悬浮窗设置，其他配置点右上角 **设置**）。
+2. 点右上角 **设置**，授予 **麦克风** 和 **通知** 权限。
+3. 在设置页点 **去开启**，在系统无障碍设置里开启 **CapsWriter 悬浮语音输入**。
    - Android 13 及以上，侧载应用的无障碍开关可能被“受限设置”拦住。到系统“应用信息 → CapsWriter 语音输入 → 右上角菜单”里允许受限制的设置，再回来开启。
-4. 打开 **启用悬浮语音**。App 会在前台启动一个麦克风类型的前台服务；这一步必须在 App 可见时完成（Android 14 的后台麦克风限制）。
-5. 点 **校准位置**。App 会聚焦测试输入框并弹出键盘；把蓝色虚线框拖到输入法的语音键位置，分别调好宽度/高度后点 **保存**。换一个输入法（或横屏）后再各校准一次，App 会自动记住对应配置。
-6. 回到任意聊天/笔记 App，唤起输入法，按住悬浮窗位置说话，松手后文字会写入当前光标处。
-7. 可选：在“客户端热词”里填入常用人名、地名或 `错词=>正确词`，保存后下一次识别生效。
-8. 可选：在“识别与输出”里选择语言、最短录音时长、末尾标点清理和 WAV 录音。
+4. 在设置页打开 **启用悬浮语音**。App 会在前台启动一个麦克风类型的前台服务；这一步必须在 App 可见时完成（Android 14 的后台麦克风限制）。
+   - 从旧版更新到 1.5.0 或更高版本后，请把无障碍服务**关闭再开启一次**，让短按穿透所需的 `canPerformGestures` 生效。
+5. 回到主页点 **校准位置**。App 会切到设置页的测试输入框并弹出键盘；把蓝色虚线框拖到输入法的语音键位置，分别调好宽度/高度后点 **保存**。换一个输入法（或横屏）后再各校准一次，App 会自动记住对应配置。
+6. 回到任意聊天/笔记 App，唤起输入法，按住悬浮窗位置说话，松手后文字会写入当前光标处。短按会转发给输入法自己的语音键（可在主页悬浮窗设置关闭“短按穿透”）。
+7. 可选：在设置页“客户端热词”里填入常用人名、地名或 `错词=>正确词`，保存后下一次识别生效。
+8. 可选：在设置页“识别与输出”里选择语言、最短录音时长、末尾标点清理和 WAV 录音。
+9. 可选：在主页悬浮窗设置开启 **麦克风预热（低延迟）**。开启后输入法显示期间麦克风保持预热，按下时补发最近约 500ms 音频；键盘收起约 10 秒后释放。默认关闭，会增加耗电。
+10. 启动时若 GitHub 有更新的 Release，会弹出更新提示；“不再提醒”只跳过当前版本，“暂不更新”下次启动仍会提示，“GitHub”用默认浏览器打开发布页。
 
-> 应用已从最近任务列表隐藏；按 Home 后请通过通知或桌面图标回到应用。
+> 应用默认从最近任务列表隐藏；按 Home 后请通过通知或桌面图标回到应用。可在权限卡片关闭“隐藏最近任务”。
 
 > 悬浮窗在视觉上完全不可见，位置就是校准框的位置。找不到时，回到 App 点“校准位置”重新看一遍；或先点“重置位置”。
 
@@ -107,11 +116,12 @@ re:卡普[斯丝]=>Caps
 | --- | --- |
 | `RECORD_AUDIO` | 录音并发送给局域网服务端 |
 | `INTERNET` / `ACCESS_NETWORK_STATE` | WebSocket 连接 |
-| `FOREGROUND_SERVICE` / `FOREGROUND_SERVICE_MICROPHONE` | 按住说话期间保持录音，Android 14 必需 |
+| `FOREGROUND_SERVICE` / `FOREGROUND_SERVICE_MICROPHONE` | 按住说话/麦克风预热期间保持录音，Android 14 必需 |
 | `POST_NOTIFICATIONS` | 显示“录音中/识别中”的常驻通知 |
 | `VIBRATE` | 按下、松手的触觉反馈 |
-| `BIND_ACCESSIBILITY_SERVICE` | 检测输入法、显示悬浮层、写入文字 |
+| `BIND_ACCESSIBILITY_SERVICE` | 检测输入法、显示悬浮层、写入文字、短按穿透手势 |
 | `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | 可选的保活设置，避免国产 ROM 杀服务 |
+| `REORDER_TASKS` / `GET_TASKS` | 动态切换“隐藏最近任务” |
 
 App 不申请“显示在其他应用上层”，也不申请 root/Shizuku。
 
@@ -157,12 +167,14 @@ App 不申请“显示在其他应用上层”，也不申请 root/Shizuku。
 app/src/main/java/com/capswriter/offline/
 ├── audio/
 │   ├── AudioCapture.kt          # 16 kHz float32 PCM 采集
+│   ├── AudioPrewarmer.kt        # 麦克风预热与 500ms 预录缓冲
 │   ├── AudioWavWriter.kt        # 可选 WAV 录音落盘
 │   └── VoiceSession.kt          # 一次按住说话的完整生命周期
 ├── net/
 │   ├── CapsWriterSocket.kt      # CapsWriter-Offline WebSocket 协议
 │   ├── NetClient.kt             # OkHttp 单例
-│   └── ServerProbe.kt           # 连接测试
+│   ├── ServerProbe.kt           # 连接测试
+│   └── UpdateChecker.kt         # GitHub Release 更新检查
 ├── service/
 │   ├── CapsWriterAccessibilityService.kt  # 输入法检测 + 文字上屏
 │   ├── OverlayController.kt              # 透明悬浮窗、校准面板
@@ -176,9 +188,18 @@ app/src/main/java/com/capswriter/offline/
 
 ## 隐私
 
-音频只发送到你自己填写的 CapsWriter-Offline 服务端，不经过任何第三方服务器。App 不保存录音文件，日志不会发送给包括开发者的任何人。识别文本会显示在 App 的“最近识别”和剪贴板兜底中，请自行注意隐私。
+音频只发送到你自己填写的 CapsWriter-Offline 服务端，不经过任何第三方服务器。录音默认不保存；开启“保存录音”后会写到应用专属目录。日志不会发送给包括开发者的任何人。识别文本会显示在 App 的“最近识别”和剪贴板兜底中，请自行注意隐私。
+
+开启“麦克风预热”后，系统麦克风指示器会在输入法显示期间保持亮起；这是 Android 的隐私提示，App 无法隐藏。预热缓冲只在按下悬浮按钮后才发送给服务端。
 
 ## 验证情况
+
+- 当前版本：**1.7.0 / versionCode 9**。
+- `testDebugUnitTest`：22 个测试通过。
+- `lintDebug`：0 Error。
+- APK 使用 Android debug 证书，v2 签名。
+- 当前环境没有 Android 真机/模拟器，设置分页、暗黑主题、自动更新弹窗、短按穿透、最近任务开关、麦克风预热和具体输入法兼容性仍需实机确认。
+- 自动更新检查指向 `app/build.gradle.kts` 中的 `GITHUB_REPO`（当前 `xgh9191029/CapsWriter-Android`）；仓库没有 Release 时会静默跳过。
 
 ---
 
@@ -187,6 +208,8 @@ app/src/main/java/com/capswriter/offline/
 [中文](#capswriter-安卓离线语音输入) · [English](#english)
 
 > **Unofficial Android client for [CapsWriter-Offline](https://github.com/HaujetZhao/CapsWriter-Offline)**. Thanks to the original author for open-sourcing the project; the protocol, configuration semantics, and interaction ideas are inspired by the upstream project.
+>
+> GitHub repository: [xgh9191029/CapsWriter-Android](https://github.com/xgh9191029/CapsWriter-Android)
 
 An Android client written in **Kotlin** that connects to a [CapsWriter-Offline](https://github.com/HaujetZhao/CapsWriter-Offline) server on your LAN and injects speech recognition results directly into the active input field.
 
@@ -194,12 +217,16 @@ Its interaction is intentionally lightweight: **it does not replace your keyboar
 
 ## Features
 
+- The home page keeps only **server address** and **floating-target settings**; permissions, recognition/output, test, hotwords, guide and diagnostics live on a separate **Settings** page.
+- Follows the system dark theme (Android 10+).
+- Checks GitHub Releases once at startup; when a newer version exists, a dialog offers **Don’t remind me / Not now / GitHub**.
 - Manual CapsWriter-Offline server address configuration: supports `IP`, `IP:port`, `ws://`, and `wss://`; default port `6016` (`6006` for older servers).
 - Accessibility-based IME window detection: shows the transparent overlay when the keyboard pops up and removes it automatically when hidden.
 - Uses `TYPE_ACCESSIBILITY_OVERLAY`, layered above the IME. It does **not** require the “Display over other apps” permission (standard app overlays get covered by the keyboard).
 - Completely transparent overlay by default, keeping only the touch hit region; recording/recognition states are indicated via haptic vibration and a persistent notification.
-- Hold-to-talk and tap-to-toggle modes.
-- Supports hiding from the recent tasks list to prevent accidentally clearing the background service.
+- Hold-to-talk and tap-to-toggle modes. In hold mode, a short tap is forwarded to the IME's own voice key while a long hold records with CapsWriter.
+- Optional hiding from the recent tasks list (enabled by default) to prevent accidentally clearing the background service.
+- Optional **microphone prewarm**: keeps the microphone open while the IME is visible and prepends the last ~500 ms of audio on press, reducing startup delay and clipped first syllables. Off by default; higher battery use and the microphone indicator stays visible.
 - Recognition language selection (Auto / Chinese / English / Japanese), adjustable minimum recording duration, trailing punctuation trimming, and optional WAV recording.
 - Calibration mode: displays a blue dashed box with **independent width and height adjustment**. Drag it onto your keyboard's key and save; position and size are stored per **IME + orientation**, allowing separate profiles for Gboard, Sogou, Celia, etc.
 - Streams 16 kHz mono float32 PCM audio directly via WebSocket, complying with the CapsWriter-Offline v2.x protocol.
@@ -236,17 +263,20 @@ $env:ANDROID_HOME = "C:\path\to\Android\Sdk"
 
 ## First-Time Setup
 
-1. Open the app, enter your computer's LAN address (e.g., `192.168.1.100:6016`), and tap **Save and test**.
-2. Grant **Microphone** and **Notifications** permissions.
-3. Tap **Enable** and turn on **CapsWriter floating voice input** in Android Accessibility settings.
+1. Open the app, enter your computer's LAN address (e.g., `192.168.1.100:6016`), and tap **Save and test**. The home page keeps only server and floating-target settings; tap **Settings** for everything else.
+2. Open **Settings**, then grant **Microphone** and **Notifications** permissions.
+3. In Settings, tap **Enable** and turn on **CapsWriter floating voice input** in Android Accessibility settings.
    - On Android 13+, the accessibility toggle for sideloaded apps may be blocked by “Restricted settings”. Go to system “App info → CapsWriter → top-right menu” and select “Allow restricted settings”, then return to enable it.
-4. Turn on **Enable floating voice input**. The app starts a microphone-type foreground service; this step must be completed while the app is visible (due to Android 14 background microphone restrictions).
-5. Tap **Calibrate position**. The app focuses a test input field and opens the keyboard; drag the blue dashed box over your keyboard's voice key, adjust width/height separately, and tap **Save**. Repeat once when switching keyboards or screen orientation so the app remembers each profile.
-6. Open any chat or note app, bring up the keyboard, hold the floating area to speak, and release to insert text at the cursor.
-7. Optional: Add frequently used names, places, or `wrong=>correct` rules in “Client hotwords”; changes take effect on the next recording after saving.
-8. Optional: Configure recognition language, minimum recording duration, trailing punctuation trimming, and WAV recording under “Recognition & Output”.
+4. In Settings, turn on **Enable floating voice input**. The app starts a microphone-type foreground service; this step must be completed while the app is visible (due to Android 14 background microphone restrictions).
+   - After updating to 1.5.0 or newer, turn the accessibility service off and on once so the `canPerformGestures` permission used by short-tap pass-through is applied.
+5. Return to the home page and tap **Calibrate position**. The app switches to the Settings test field and opens the keyboard; drag the blue dashed box over your keyboard's voice key, adjust width/height separately, and tap **Save**. Repeat once when switching keyboards or screen orientation so the app remembers each profile.
+6. Open any chat or note app, bring up the keyboard, hold the floating area to speak, and release to insert text at the cursor. A short tap is forwarded to the IME's own voice key (disable **Pass short taps to the keyboard** in the home floating-target settings).
+7. Optional: Add frequently used names, places, or `wrong=>correct` rules in “Client hotwords” on the Settings page; changes take effect on the next recording after saving.
+8. Optional: Configure recognition language, minimum recording duration, trailing punctuation trimming, and WAV recording under “Recognition & Output” on the Settings page.
+9. Optional: Enable **Microphone prewarm (low latency)** in the home floating-target settings. The microphone stays warm while the keyboard is visible and the last ~500 ms is prepended on press; it is released about 10 s after the keyboard hides. Off by default; higher battery use.
+10. At startup, if a newer GitHub Release exists, a dialog offers **Don’t remind me** (skip this version), **Not now**, or **GitHub** (open the release page in the default browser).
 
-> The app is hidden from recent tasks; after pressing Home, return to the app via its notification or launcher icon.
+> The app is hidden from recent tasks by default; after pressing Home, return to the app via its notification or launcher icon. Disable **Hide from recent tasks** in the permissions card if you prefer to return from recents.
 
 > The overlay is completely invisible—its location matches the calibration box. If you lose track of it, return to the app and tap “Calibrate position” to view it again, or tap “Reset position”.
 
@@ -291,11 +321,12 @@ The actual behavior **strips trailing punctuation when the semantic unit count i
 | --- | --- |
 | `RECORD_AUDIO` | Record audio and stream it to your LAN server |
 | `INTERNET` / `ACCESS_NETWORK_STATE` | WebSocket network connectivity |
-| `FOREGROUND_SERVICE` / `FOREGROUND_SERVICE_MICROPHONE` | Keep recording alive while holding to speak (required on Android 14+) |
+| `FOREGROUND_SERVICE` / `FOREGROUND_SERVICE_MICROPHONE` | Keep recording/prewarming alive (required on Android 14+) |
 | `POST_NOTIFICATIONS` | Display persistent “Recording / Recognizing” notification |
 | `VIBRATE` | Haptic feedback on press and release |
-| `BIND_ACCESSIBILITY_SERVICE` | Detect IME window, display overlay, and inject text |
+| `BIND_ACCESSIBILITY_SERVICE` | Detect IME window, display overlay, inject text, short-tap gesture |
 | `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Optional keep-alive setting to prevent aggressive OEM background killing |
+| `REORDER_TASKS` / `GET_TASKS` | Toggle “Hide from recent tasks” at runtime |
 
 The app never requests “Display over other apps”, root, or Shizuku.
 
@@ -319,6 +350,7 @@ The app never requests “Display over other apps”, root, or Shizuku.
 - If it still only copies to the clipboard, check the last “Insertion diagnostics” entry in the in-app “Diagnostic logs”, which lists candidate node class names, package names, and editable/focused flags. Share that line and the target app name to diagnose whether no node was found or the node rejected the action.
 - Apps that expose no writable input nodes to Android's accessibility tree (certain WebViews, Flutter apps, remote desktops, in-game chat boxes) cannot receive direct text injection due to Android's permission model—manual paste from the clipboard is required.
 - If you switched apps mid-recognition, text is written to the new app's active editable field if available, or copied to the clipboard otherwise.
+- If short-tap pass-through or microphone prewarm does not behave as expected, disable the corresponding switch; long-press recording and the normal per-press microphone path remain available.
 
 **Overlay position is misaligned**
 - Recalibrate; position and dimensions are saved per “IME + orientation”, so Gboard, Sogou, etc., each need one-time calibration.
@@ -340,12 +372,14 @@ The app never requests “Display over other apps”, root, or Shizuku.
 app/src/main/java/com/capswriter/offline/
 ├── audio/
 │   ├── AudioCapture.kt          # 16 kHz float32 PCM capture
+│   ├── AudioPrewarmer.kt        # Warm microphone + 500 ms pre-roll buffer
 │   ├── AudioWavWriter.kt        # Optional WAV file writer
 │   └── VoiceSession.kt          # Full lifecycle of a push-to-talk session
 ├── net/
 │   ├── CapsWriterSocket.kt      # CapsWriter-Offline WebSocket protocol
 │   ├── NetClient.kt             # OkHttp singleton
-│   └── ServerProbe.kt           # Connection test probe
+│   ├── ServerProbe.kt           # Connection test probe
+│   └── UpdateChecker.kt         # GitHub Release update check
 ├── service/
 │   ├── CapsWriterAccessibilityService.kt  # IME detection + text injection
 │   ├── OverlayController.kt              # Transparent overlay & calibration panel
@@ -359,6 +393,15 @@ app/src/main/java/com/capswriter/offline/
 
 ## Privacy
 
-Audio is sent exclusively to the CapsWriter-Offline server address you configure, with no third-party servers involved. Recordings are not saved, and logs are never sent to anyone, including the developer. Recognized text appears in the in-app “Latest result” view and clipboard fallback, so please handle sensitive text accordingly.
+Audio is sent exclusively to the CapsWriter-Offline server address you configure, with no third-party servers involved. Recordings are not saved by default; if WAV saving is enabled, files go to app-specific storage. Logs are never sent to anyone, including the developer. Recognized text appears in the in-app “Latest result” view and clipboard fallback, so please handle sensitive text accordingly.
+
+With microphone prewarm enabled, the Android microphone indicator stays visible while the keyboard is shown; the app cannot hide it. Buffered audio is sent to the server only after you press the floating target.
 
 ## Verification
+
+- Current version: **1.7.0 / versionCode 9**.
+- `testDebugUnitTest`: 22 tests pass.
+- `lintDebug`: 0 errors.
+- APK uses the Android debug certificate and v2 signing.
+- No Android device/emulator is attached; the split Settings page, dark theme, update dialog, short-tap pass-through, recent-task toggle, microphone prewarm, and IME compatibility still require on-device verification.
+- The update check targets `GITHUB_REPO` in `app/build.gradle.kts` (currently `xgh9191029/CapsWriter-Android`); it silently skips when the repository has no releases.

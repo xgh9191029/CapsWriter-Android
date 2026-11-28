@@ -2,6 +2,16 @@
 <resources>
     <string name="app_name">CapsWriter 语音输入</string>
     <string name="app_subtitle">离线语音识别 · 透明悬浮按钮 · 不改变你的输入法</string>
+    <string name="settings_button">设置</string>
+    <string name="back_button">返回</string>
+    <string name="settings_title">设置</string>
+    <string name="settings_subtitle">权限、识别、热词与诊断</string>
+    <string name="update_available_title">发现新版本</string>
+    <string name="update_available_message">当前版本 %1$s，GitHub 最新版本 %2$s。是否前往 GitHub 下载更新？</string>
+    <string name="update_button_github">GitHub</string>
+    <string name="update_button_later">暂不更新</string>
+    <string name="update_button_never">不再提醒</string>
+    <string name="update_browser_failed">无法打开浏览器</string>
     <string name="accessibility_service_label">CapsWriter 悬浮语音输入</string>
     <string name="accessibility_service_description">用于检测输入法是否弹出，在输入法按键上方显示透明悬浮按钮，并把识别结果写入当前输入框。不会收集或上传屏幕内容。</string>
 
@@ -58,6 +68,8 @@
     <string name="reset_position">重置所有校准</string>
     <string name="pass_through_short_tap">短按穿透到输入法</string>
     <string name="pass_through_short_tap_desc">按住时正常录音；短按不录音，而是把点击转发给下层输入法的语音键，让输入法自己的短按功能不受透明悬浮窗影响。需要无障碍手势权限，更新后请关闭再开启一次无障碍服务。</string>
+    <string name="prewarm_mic">麦克风预热（低延迟）</string>
+    <string name="prewarm_mic_desc">键盘显示时保持麦克风预热，按键后附带最近约 500ms 音频，减少启动延迟和吞字；会增加耗电，键盘收起约 10 秒后释放。默认关闭。</string>
     <string name="calibrate_help">点“校准位置”后，应用会在输入法上方显示一个蓝色虚线框。宽高可分别调整；把框拖到输入法语音键的位置再保存。每个输入法、横竖屏会分别记住自己的位置和大小。</string>
     <string name="section_hotwords">6 · 客户端热词</string>
     <string name="hotwords_hint">每行一个词，或“错词=>正确词”</string>

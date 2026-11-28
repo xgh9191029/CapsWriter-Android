@@ -144,6 +144,7 @@ class OverlayController(
         val interactive = powerManager?.isInteractive != false
 
         if (!prefs.enabled) {
+            VoiceForegroundService.instance?.setPrewarmActive(false)
             if (editMode) {
                 editMode = false
                 restoreOriginalSize()
@@ -155,6 +156,7 @@ class OverlayController(
 
         val showTarget = interactive && (editMode || imeBounds != null)
         if (showTarget) {
+            VoiceForegroundService.instance?.setPrewarmActive(imeBounds != null)
             if (targetBinding == null) {
                 addTarget()
             } else {
@@ -174,6 +176,7 @@ class OverlayController(
             }
         } else {
             val voice = VoiceForegroundService.instance
+            voice?.setPrewarmActive(false)
             if (!editMode && voice != null &&
                 (voice.state == VoiceState.RECORDING || voice.state == VoiceState.CONNECTING)
             ) {

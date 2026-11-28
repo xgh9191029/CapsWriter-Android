@@ -12,8 +12,11 @@ android {
         applicationId = "com.capswriter.offline"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "1.5.0"
+        versionCode = 9
+        versionName = "1.7.0"
+
+        // Used by the startup update checker. Change this if the repository moves.
+        buildConfigField("String", "GITHUB_REPO", "\"xgh9191029/CapsWriter-Android\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

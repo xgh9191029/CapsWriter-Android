@@ -14,13 +14,16 @@ import android.os.PowerManager
 import android.provider.Settings
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
+import com.capswriter.offline.BuildConfig
 import com.capswriter.offline.R
 import com.capswriter.offline.audio.AudioWavWriter
 import com.capswriter.offline.databinding.ActivityMainBinding
 import com.capswriter.offline.net.ServerProbe
+import com.capswriter.offline.net.UpdateChecker
 import com.capswriter.offline.service.CapsWriterAccessibilityService
 import com.capswriter.offline.service.VoiceForegroundService
 import com.capswriter.offline.util.AppLog
@@ -42,8 +45,10 @@ class MainActivity : AppCompatActivity() {
     private var updatingSize = false
     private var updatingMode = false
     private var updatingPassThrough = false
+    private var updatingPrewarm = false
     private var updatingOutput = false
     private var receiverRegistered = false
+    private var showingSettings = false
 
     private val statusReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -67,7 +72,85 @@ class MainActivity : AppCompatActivity() {
         setupOverlaySettings()
         setupTestArea()
         setupHotwords()
+        setupPageNavigation()
+        showPage(false)
         updateAll()
+        if (savedInstanceState == null) {
+            checkForUpdates()
+        }
+    }
+
+    private fun checkForUpdates() {
+        UpdateChecker.check { update ->
+            if (isFinishing || isDestroyed) return@check
+            if (update == null ||
+                !UpdateChecker.isNewer(update.version, BuildConfig.VERSION_NAME) ||
+                update.version == prefs.skippedUpdateVersion
+            ) {
+                return@check
+            }
+            MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.update_available_title)
+                .setMessage(
+                    getString(
+                        R.string.update_available_message,
+                        BuildConfig.VERSION_NAME,
+                        update.version,
+                    )
+                )
+                .setPositiveButton(R.string.update_button_github) { _, _ ->
+                    openUpdatePage(update.pageUrl)
+                }
+                .setNeutralButton(R.string.update_button_later, null)
+                .setNegativeButton(R.string.update_button_never) { _, _ ->
+                    prefs.skippedUpdateVersion = update.version
+                }
+                .show()
+        }
+    }
+
+    private fun openUpdatePage(url: String) {
+        runCatching {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        }.onFailure {
+            toast(getString(R.string.update_browser_failed))
+        }
+    }
+
+    private fun setupPageNavigation() {
+        binding.btnOpenSettings.setOnClickListener {
+            showPage(!showingSettings)
+        }
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (showingSettings) {
+                    showPage(false)
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                    isEnabled = true
+                }
+            }
+        })
+    }
+
+    private fun showPage(settings: Boolean) {
+        showingSettings = settings
+        binding.cardServer.isVisible = !settings
+        binding.cardOverlay.isVisible = !settings
+        binding.cardStatus.isVisible = settings
+        binding.cardPermissions.isVisible = settings
+        binding.cardOutput.isVisible = settings
+        binding.cardTest.isVisible = settings
+        binding.cardHotwords.isVisible = settings
+        binding.cardGuide.isVisible = settings
+        binding.cardLogs.isVisible = settings
+        binding.tvHeaderTitle.setText(if (settings) R.string.settings_title else R.string.app_name)
+        binding.tvHeaderSubtitle.setText(
+            if (settings) R.string.settings_subtitle else R.string.app_subtitle
+        )
+        binding.btnOpenSettings.setText(if (settings) R.string.back_button else R.string.settings_button)
+        binding.root.scrollTo(0, 0)
     }
 
     override fun onStart() {
@@ -432,6 +515,16 @@ class MainActivity : AppCompatActivity() {
             prefs.passThroughShortTap = checked
         }
 
+        updatingPrewarm = true
+        binding.switchPrewarmMic.isChecked = prefs.prewarmMic
+        updatingPrewarm = false
+        binding.switchPrewarmMic.setOnCheckedChangeListener { _, checked ->
+            if (updatingPrewarm) return@setOnCheckedChangeListener
+            prefs.prewarmMic = checked
+            // Ask the overlay to start/stop the warm microphone immediately.
+            CapsWriterAccessibilityService.instance?.refreshOverlay()
+        }
+
         binding.btnCalibrate.setOnClickListener {
             if (!prefs.enabled) {
                 toast(getString(R.string.calibration_disabled))
@@ -447,8 +540,13 @@ class MainActivity : AppCompatActivity() {
                 toast(getString(R.string.calibration_service_missing))
                 return@setOnClickListener
             }
-            showKeyboardForCalibration()
-            binding.root.postDelayed({ service.startCalibration() }, 450)
+            // The test input lives on the settings page, so move there before
+            // asking the IME to open for calibration.
+            showPage(true)
+            binding.root.postDelayed({
+                showKeyboardForCalibration()
+                binding.root.postDelayed({ service.startCalibration() }, 450)
+            }, 150)
         }
 
         binding.btnResetPosition.setOnClickListener {
@@ -520,6 +618,9 @@ class MainActivity : AppCompatActivity() {
         updatingPassThrough = true
         binding.switchPassThroughShortTap.isChecked = prefs.passThroughShortTap
         updatingPassThrough = false
+        updatingPrewarm = true
+        binding.switchPrewarmMic.isChecked = prefs.prewarmMic
+        updatingPrewarm = false
         updatingOutput = true
         binding.languageGroup.check(languageButtonId(prefs.language))
         binding.switchTrimPunctuation.isChecked = prefs.trimTrailingPunctuation

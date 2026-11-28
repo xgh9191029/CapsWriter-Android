@@ -40,6 +40,7 @@
                 android:orientation="vertical">
 
                 <TextView
+                    android:id="@+id/tvHeaderTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/app_name"
@@ -48,6 +49,7 @@
                     android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/tvHeaderSubtitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="3dp"
@@ -56,9 +58,20 @@
                     android:textColor="@color/on_surface_variant"
                     android:textSize="12sp" />
             </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnOpenSettings"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="42dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="10dp"
+                android:text="@string/settings_button"
+                android:textSize="12sp" />
         </LinearLayout>
 
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardStatus"
             style="@style/Widget.CapsWriter.Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -97,6 +110,7 @@
 
         <!-- Server -->
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardServer"
             style="@style/Widget.CapsWriter.Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -161,6 +175,7 @@
 
         <!-- Permissions -->
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardPermissions"
             style="@style/Widget.CapsWriter.Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -367,6 +382,7 @@
 
         <!-- Recognition and output -->
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardOutput"
             style="@style/Widget.CapsWriter.Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -569,6 +585,7 @@
 
         <!-- Overlay -->
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardOverlay"
             style="@style/Widget.CapsWriter.Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -709,6 +726,24 @@
                     android:textColor="@color/on_surface_variant"
                     android:textSize="12sp" />
 
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchPrewarmMic"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="7dp"
+                    android:minHeight="44dp"
+                    android:text="@string/prewarm_mic"
+                    android:textColor="@color/on_surface"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="-6dp"
+                    android:text="@string/prewarm_mic_desc"
+                    android:textColor="@color/on_surface_variant"
+                    android:textSize="12sp" />
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -749,6 +784,7 @@
 
         <!-- Test -->
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardTest"
             style="@style/Widget.CapsWriter.Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -811,6 +847,7 @@
 
         <!-- Client hotwords -->
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardHotwords"
             style="@style/Widget.CapsWriter.Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -876,6 +913,7 @@
 
         <!-- Guide -->
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardGuide"
             style="@style/Widget.CapsWriter.Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -906,6 +944,7 @@
 
         <!-- Logs -->
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardLogs"
             style="@style/Widget.CapsWriter.Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

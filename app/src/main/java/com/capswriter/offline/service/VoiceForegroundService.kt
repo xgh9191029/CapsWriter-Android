@@ -19,6 +19,7 @@ import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.capswriter.offline.R
+import com.capswriter.offline.audio.AudioPrewarmer
 import com.capswriter.offline.audio.VoiceSession
 import com.capswriter.offline.ui.MainActivity
 import com.capswriter.offline.util.AppLog
@@ -55,6 +56,7 @@ class VoiceForegroundService : Service() {
 
         private const val CHANNEL_ID = "caps_writer_voice"
         private const val NOTIFICATION_ID = 2106
+        private const val PREWARM_IDLE_MS = 10_000L
 
         fun start(context: Context) {
             val intent = Intent(context, VoiceForegroundService::class.java)
@@ -72,6 +74,9 @@ class VoiceForegroundService : Service() {
     private var session: VoiceSession? = null
     private var targetPackage: String? = null
     private var notificationStarted = false
+    private var prewarmer: AudioPrewarmer? = null
+    private var prewarmStop: Runnable? = null
+    private var prewarmFailed = false
 
     @Volatile
     private var destroyed = false
@@ -127,6 +132,10 @@ class VoiceForegroundService : Service() {
 
     override fun onDestroy() {
         destroyed = true
+        prewarmStop?.let { main.removeCallbacks(it) }
+        prewarmStop = null
+        prewarmer?.stop()
+        prewarmer = null
         val active = session
         session = null
         active?.cancel(getString(R.string.reason_service_stopped))
@@ -176,6 +185,7 @@ class VoiceForegroundService : Service() {
             language = prefs.language,
             saveAudio = prefs.saveAudio,
             minRecordMs = prefs.minRecordMs,
+            prewarm = if (prefs.prewarmMic) prewarmer else null,
             callback = sessionCallback,
         )
         session = newSession
@@ -185,6 +195,44 @@ class VoiceForegroundService : Service() {
 
     fun stopRecording() {
         session?.stop()
+    }
+
+    /**
+     * Called by OverlayController whenever the IME visibility changes. When the
+     * keyboard is visible and the setting is on, keep the microphone warm; after
+     * it hides, release it after a short grace period.
+     */
+    fun setPrewarmActive(active: Boolean) {
+        if (destroyed) return
+        prewarmStop?.let { main.removeCallbacks(it) }
+        prewarmStop = null
+
+        if (!prefs.prewarmMic) {
+            prewarmFailed = false
+            if (session == null) {
+                prewarmer?.stop()
+                prewarmer = null
+            }
+            return
+        }
+        if (active) {
+            if (prewarmFailed) return
+            if (prewarmer == null) prewarmer = AudioPrewarmer(this)
+            if (prewarmer?.start() == false) {
+                prewarmFailed = true
+            }
+        } else {
+            prewarmFailed = false
+            if (session != null) return
+            val stop = Runnable {
+                prewarmStop = null
+                if (session == null) {
+                    prewarmer?.stop()
+                }
+            }
+            prewarmStop = stop
+            main.postDelayed(stop, PREWARM_IDLE_MS)
+        }
     }
 
     fun cancelRecording(reason: String? = null) {
