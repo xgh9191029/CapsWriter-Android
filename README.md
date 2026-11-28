@@ -4,7 +4,7 @@
 <div align="center">
   <img src="./images/images-removebg-preview.png" alt="CapsWriter Android" width="300" />
 </div>
-> ** [CapsWriter-Offline](https://github.com/HaujetZhao/CapsWriter-Offline) 的非官方 Android 客户端**，感谢原作者的开源精神；协议、配置项和交互灵感来自上游项目。
+> ** <a href=https://github.com/HaujetZhao/CapsWriter-Offline>CapsWriter-Offline</a> 的非官方 Android 客户端**，感谢原作者的开源精神；协议、配置项和交互灵感来自上游项目。
 
 一个用 **Kotlin** 写的 Android 客户端，连接局域网里的 [CapsWriter-Offline](https://github.com/HaujetZhao/CapsWriter-Offline) 服务端，把语音识别结果直接写进当前输入框。
 
